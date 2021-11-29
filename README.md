@@ -112,7 +112,7 @@ To look into script: cat /RAID/Data/mites/reads/linda_umi/bastet.ccg.uni-koeln.d
 
 command:  sh filter.BIALLELIC.sh
 
-## VCFtools for mutation rates: comparing mothers and daughters to get the mutation rate
+## 6. VCFtools for mutation rates: comparing mothers and daughters to get the mutation rate
 to look into script: cat /RAID/Data/mites/reads/linda_umi/bastet.ccg.uni-koeln.de/downloads/jbast_JB03_September6/clean_data/snp/merged_gvcf/paired/extract_SNP.sh 
 
 vcftools --gzvcf ../merge.snp.f.bi.vcf.gz \--recode-INFO-all \
