@@ -34,7 +34,7 @@ umi_tools extract
 --paored 
 --output_dir
 
-## 2. Concatenated previous data and new data
+## 2. Concatenated previous September data and new coverage data from October
 
 Result in /home/linda/Data/all_data/
 
