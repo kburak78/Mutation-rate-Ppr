@@ -75,6 +75,7 @@ bash nohup mapping.sh > mapping.log &
     done
 
 ### Explanation of bwa
+mem -t -R 
 
 ### Explanation of samtools
 view 
@@ -83,8 +84,7 @@ sort -o
 index 
 
 ### Explanation of umi_tools 
-dedup
--S `
+dedup -S `
      
 ## 4. SNP and Indel calling 
 
@@ -136,8 +136,20 @@ To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
 
   Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID/Data/linda/all_data/vcf.
   
+### Explanation of GATK tools
+HaplotypeCaller 
+-R
+--emit-ref-confidence GVCF 
+-I
+-O
+
+GenotypeGVCF
+-R 
+-V 
+-O
+
+bgzip -f
+tabix -p
+  
 ## 5. Hardfiltering the Variants
- 
- 
- 
- 
+
