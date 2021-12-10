@@ -84,8 +84,8 @@ sort -o
 index 
 
 ### Explanation of umi_tools 
-dedup -S `
-     
+dedup -S 
+
 ## 4. SNP and Indel calling 
 
 ### with GATK 
@@ -134,7 +134,7 @@ To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
     nohup sh shell/${i}.sh/) > shell/$i.log &
     done
 
-  Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID/Data/linda/all_data/vcf.
+Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID/Data/linda/all_data/vcf.
   
 ### Explanation of GATK tools
 
@@ -171,32 +171,20 @@ Script in /RAID/Data/linda/all_data/vcf/filter.sh
         finalvcf=$6
         
         ###SelectVariants SNP
-        $gatk SelectVariants \
-        -select-type SNP \
-        -V $vcf \
-        -O $snpvcf
+        $gatk SelectVariants -select-type SNP -V $vcf -O $snpvcf
+        
         ###SelectVariants INDEL
-        $gatk SelectVariants \
-        -select-type INDEL \
-        -V $vcf \
-        -O $indelvcf
+        $gatk SelectVariants -select-type INDEL -V $vcf -O $indelvcf
+        
         ###filter SNP
-        $gatk VariantFiltration \
-        -V $snpvcf \
-        --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
-        --filter-name "PASS" \
-        -O $filterSNP
+        $gatk VariantFiltration -V $snpvcf --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" --filter-name "PASS" -O $filterSNP
+        
         ###filter INDEL
-        $gatk VariantFiltration \
-        -V $indelvcf \
-        --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
-        --filter-name "PASS" \
-        -O $filterINDEL
+        $gatk VariantFiltration -V $indelvcf --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" --filter-name "PASS" -O $filterINDEL
+        
         ###merge SNP INDEL
-        $gatk MergeVcfs \
-        -I $filterSNP \
-        -I $filterINDEL \
-        -O $finalvcf
+        $gatk MergeVcfs -I $filterSNP -I $filterINDEL -O $finalvcf
+        
         ###delete temp
         rm -f $snpvcf $indelvcf $filterSNP $filterINDEL
         
