@@ -161,44 +161,57 @@ QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0
 
 Script in /RAID/Data/linda/all_data/vcf/filter.sh
 
-        gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
-        ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
-        vcf=$1
-        snpvcf=$2
-        indelvcf=$3
-        filterSNP=$4
-        filterINDEL=$5
-        finalvcf=$6
-        
-        ###SelectVariants SNP
-        $gatk SelectVariants -select-type SNP -V $vcf -O $snpvcf
-        
-        ###SelectVariants INDEL
-        $gatk SelectVariants -select-type INDEL -V $vcf -O $indelvcf
-        
-        ###filter SNP
-        $gatk VariantFiltration -V $snpvcf --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" --filter-name "PASS" -O $filterSNP
-        
-        ###filter INDEL
-        $gatk VariantFiltration -V $indelvcf --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" --filter-name "PASS" -O $filterINDEL
-        
-        ###merge SNP INDEL
-        $gatk MergeVcfs -I $filterSNP -I $filterINDEL -O $finalvcf
-        
-        ###delete temp
-        rm -f $snpvcf $indelvcf $filterSNP $filterINDEL
+    ###software
+    gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
+    ###data
+    ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
+    vcf=$1
+    snpvcf=$2
+    indelvcf=$3
+    filterSNP=$4
+    filterINDEL=$5
+    finalvcf=$6
+    ###SelectVariants SNP
+    $gatk SelectVariants \
+    -select-type SNP \
+    -V $vcf \
+    -O $snpvcf
+    ###SelectVariants INDEL
+    $gatk SelectVariants \
+    -select-type INDEL \
+    -V $vcf \
+    -O $indelvcf
+    ###filter SNP
+    $gatk VariantFiltration \
+    -V $snpvcf \
+    --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
+    --filter-name "PASS" \
+    -O $filterSNP
+    ###filter INDEL
+    $gatk VariantFiltration \
+    -V $indelvcf \
+    --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
+    --filter-name "PASS" \
+    -O $filterINDEL
+    ###merge SNP INDEL
+    $gatk MergeVcfs \
+    -I $filterSNP \
+    -I $filterINDEL \
+    -O $finalvcf
+    ###delete temp
+    rm -f $snpvcf $indelvcf $filterSNP $filterINDEL
         
         
 To run everything simultaneously and I used 'echo'.
 Script in /RAID/Data/linda/all_data/vcf/bash_filter_sim.sh
 
-        for i in A006200178_153621_S1 \
-        A006200178_153622_S2 \
-        A006200178_153623_S3 \
-        A006200178_153624_S4 \
-        A006200178_153625_S5 \
-        A006200178_153626_S6
-        do
-        echo "sh filtering.sh ${i}.vcf.gz ${i}.snp.vcf.gz ${i}.indel.vcf.gz ${i}.f.snp.vcf.gz ${i}.f.indel.vcf.gz ${i}.f.vcf.gz" > filter_shell/${i}.f.sh
-        nohub sh filter_shell/${i}.f.sh > filter_shell/${i}.f.sh &
-        done
+    for i in A006200178_153621_S1 \
+    A006200178_153622_S2 \
+    A006200178_153623_S3 \
+    A006200178_153624_S4 \
+    A006200178_153625_S5 \
+    A006200178_153626_S6
+    do
+    echo "sh filter.sh ${i}.vcf.gz ${i}.snp.vcf.gz ${i}.indel.vcf.gz ${i}.f.snp.vcf.gz ${i}.f.indel.vcf.gz ${i}.f.vcf.gz" >filter_shell/${i}.f.sh
+    nohup sh filter_shell/${i}.f.sh > filter_shell/${i}.f.sh &
+    done
