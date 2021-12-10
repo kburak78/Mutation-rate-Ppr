@@ -154,7 +154,12 @@ To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
 
 ## 5. Hardfiltering the Variants
 
+For Filters I used this, which was also proposed for 
+QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0"
+QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0
 
+
+Script in /RAID/Data/linda/all_data/vcf/filter.sh
 
         gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
         ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
@@ -195,3 +200,17 @@ To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
         ###delete temp
         rm -f $snpvcf $indelvcf $filterSNP $filterINDEL
         
+        
+To run everything simultaneously and I used 'echo'.
+Script in /RAID/Data/linda/all_data/vcf/bash_filter_sim.sh
+
+        for i in A006200178_153621_S1 \
+        A006200178_153622_S2 \
+        A006200178_153623_S3 \
+        A006200178_153624_S4 \
+        A006200178_153625_S5 \
+        A006200178_153626_S6
+        do
+        echo "sh filtering.sh ${i}.vcf.gz ${i}.snp.vcf.gz ${i}.indel.vcf.gz ${i}.f.snp.vcf.gz ${i}.f.indel.vcf.gz ${i}.f.vcf.gz" > filter_shell/${i}.f.sh
+        nohub sh filter_shell/${i}.f.sh > filter_shell/${i}.f.sh &
+        done
