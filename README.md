@@ -137,19 +137,61 @@ To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
   Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID/Data/linda/all_data/vcf.
   
 ### Explanation of GATK tools
-HaplotypeCaller 
--R
---emit-ref-confidence GVCF 
--I
--O
 
-GenotypeGVCF
--R 
--V 
--O
+        HaplotypeCaller 
+        -R
+        --emit-ref-confidence GVCF 
+        -I
+        -O
 
-bgzip -f
-tabix -p
-  
+        GenotypeGVCF
+        -R 
+        -V 
+        -O
+
+        bgzip -f
+        tabix -p
+
 ## 5. Hardfiltering the Variants
 
+
+
+        gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
+        ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
+        vcf=$1
+        snpvcf=$2
+        indelvcf=$3
+        filterSNP=$4
+        filterINDEL=$5
+        finalvcf=$6
+        
+        ###SelectVariants SNP
+        $gatk SelectVariants \
+        -select-type SNP \
+        -V $vcf \
+        -O $snpvcf
+        ###SelectVariants INDEL
+        $gatk SelectVariants \
+        -select-type INDEL \
+        -V $vcf \
+        -O $indelvcf
+        ###filter SNP
+        $gatk VariantFiltration \
+        -V $snpvcf \
+        --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
+        --filter-name "PASS" \
+        -O $filterSNP
+        ###filter INDEL
+        $gatk VariantFiltration \
+        -V $indelvcf \
+        --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
+        --filter-name "PASS" \
+        -O $filterINDEL
+        ###merge SNP INDEL
+        $gatk MergeVcfs \
+        -I $filterSNP \
+        -I $filterINDEL \
+        -O $finalvcf
+        ###delete temp
+        rm -f $snpvcf $indelvcf $filterSNP $filterINDEL
+        
