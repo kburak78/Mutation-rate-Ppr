@@ -18,21 +18,6 @@ To look into the script: cat /RAID/Data/linda/october/test.sh
     /NVME/Software/QC/TrimGalore-0.6.5/trim_galore -j 30 -q 30 -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -a2 AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT --fastqc --paired --output_dir clean_data ${i}_add_barcode_R1.fastq.gz ${i}_add_barcode_R3.fastq.gz
     done
     
-### Explanation of umi_tools 
-umi_tools extract 
---bc-pattern 
---stdin 
---read2-in
---stdout 
-
-### Explanation of TrimGalore 
--j
--q
--a
--a2
---fastqc 
---paored 
---output_dir
 
 ## 2. Concatenated previous September data and new coverage data from October
 
@@ -49,8 +34,7 @@ Result in /home/linda/Data/all_data/
     cat /RAID/Data/mites/reads/linda_umi/bastet.ccg.uni-koeln.de/downloads/jbast_JB03_September6/clean_data/A006200178*${i}*add_barcode_R3_val_2.fq.gz ../october/clean_data/A006200184*${i}_add_barcode_R3_val_2.fq.gz > $i.R3_val_2.fq.gz
     done
 
-### Explanation of cat
-cat means concatuated and can be used to view files or merge files together.
+
 
 ## 3. Mapping 
 Mapping trimmed reads to the reference genome.
@@ -74,17 +58,6 @@ bash nohup mapping.sh > mapping.log &
     umi_tools dedup -I mapped_data/${i}.sort.bam --output-stats=deduplicated --paired -S mapped_data/${i}.sort.de.bam --temp-dir=tmp 
     done
 
-### Explanation of bwa
-mem -t -R 
-
-### Explanation of samtools
-view 
--bS
-sort -o
-index 
-
-### Explanation of umi_tools 
-dedup -S 
 
 ## 4. SNP and Indel calling 
 
@@ -136,21 +109,6 @@ To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
 
 Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID/Data/linda/all_data/vcf.
   
-### Explanation of GATK tools
-
-        HaplotypeCaller 
-        -R
-        --emit-ref-confidence GVCF 
-        -I
-        -O
-
-        GenotypeGVCF
-        -R 
-        -V 
-        -O
-
-        bgzip -f
-        tabix -p
 
 ## 5. Hardfiltering the Variants
 
