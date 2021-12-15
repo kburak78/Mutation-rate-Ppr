@@ -173,3 +173,34 @@ Script in /RAID/Data/linda/all_data/vcf/bash_filter_sim.sh
     echo "sh filter.sh ${i}.vcf.gz ${i}.snp.vcf.gz ${i}.indel.vcf.gz ${i}.f.snp.vcf.gz ${i}.f.indel.vcf.gz ${i}.f.vcf.gz" >filter_shell/${i}.f.sh
     nohup sh filter_shell/${i}.f.sh > filter_shell/${i}.f.sh &
     done
+
+## 6. Calculated the average genome coverage with bedtools
+
+Sorted BAM-Files in /RAID/Data/linda/all-files/mapped_data
+Script in cat RAID/Data/linda/all_data/mapped_data/genome_coverage/genome_coverage.sh
+
+
+    for i in 153621_S1 \
+    153622_S2 \
+    153623_S3 \
+    153624_S4 \
+    153625_S5 \
+    153626_S6
+    do
+    bedtools genomecov -ibam ../${i}.sort.de.bam -bga > ${i}_genome_coverage
+    done
+
+Then I calculated the average with awk.
+Script in RAID/Data/linda/all_data/mapped_data/genome_coverage/gcov_average.sh
+
+for i in 153621_S1 \
+153622_S2 \
+153623_S3 \
+153624_S4 \
+153625_S5 \
+153626_S6
+do
+ls -l ${i}_genome_coverage | awk '{sum+=$4} END { print "Average of ${i}=", sum/NR}' > ${i}.average
+done
+
+
