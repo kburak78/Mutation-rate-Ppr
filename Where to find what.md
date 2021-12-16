@@ -2,8 +2,8 @@
 
 
 ## Table of Contents  
-[Headers](#heade)  
-[Emphasi](#emphasis)  
+[Headers](#headers)  
+[Emphasis](#emphasis)  
 ...snip...    
 <a name="headers"/>
-## Headers
+# Headers
