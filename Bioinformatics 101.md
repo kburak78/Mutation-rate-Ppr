@@ -2,6 +2,6 @@
 
 ## Bioinfomatics Terminology 101
 
-# Depth 
-# Coverage
-# Scaffold 
+### Depth 
+### Coverage
+### Scaffold 
