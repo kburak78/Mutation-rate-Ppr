@@ -203,7 +203,7 @@ Average genome coverage of each sample in average-genomecov.all
     Average coverage of S5= 64.3218
     Average coverage of S6= 65.4336
 
-## 7. Identifying Coding and Non-coding regions with 
+## 7. Identifying Coding and Non-coding regions with existing gtf-file
 
 extract coding regions from gtf-file.
 
