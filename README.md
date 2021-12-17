@@ -196,16 +196,20 @@ And created a samtools flagfile for each sample.
 
 Average genome coverage of each sample in average-genomecov.all
 
-Average coverage of S1= 66.297
-Average coverage of S2= 65.3743
-Average coverage of S3= 66.4849
-Average coverage of S4= 71.9713
-Average coverage of S5= 64.3218
-Average coverage of S6= 65.4336
+    Average coverage of S1= 66.297
+    Average coverage of S2= 65.3743
+    Average coverage of S3= 66.4849
+    Average coverage of S4= 71.9713
+    Average coverage of S5= 64.3218
+    Average coverage of S6= 65.4336
 
 ## 7. Identifying Coding and Non-coding regions with 
 
-awk -v OFS='\t' '$3=="gene"{print$1,$4,$5}' /RAID/Data/mites/genomes/Ppr/version03/Ppr.gtf|les > coding_area_Ppr
+extract coding regions from gtf-file.
+
+    awk -v OFS='\t' '$3=="gene"{print$1,$4,$5}' /RAID/Data/mites/genomes/Ppr/version03/Ppr.gtf > coding_area_Ppr
+    
+    
 coding_area.sh
 
 /RAID/Data/linda/all_data/mapped_data/genome_coverage/coding_area_gcov 
