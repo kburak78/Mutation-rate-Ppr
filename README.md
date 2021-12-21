@@ -262,6 +262,8 @@ And then selected all SNPs to omit the Indels ( cat /RAID/Data/linda/all_data/vc
 
 ## 9. Merging and Filtering the GVCFs
 
+cat /RAID/Data/linda/all_data/SNP_call_data_GATK/filter.merge.gvcf.sh
+
     gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
     ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
 
@@ -302,17 +304,23 @@ And then selected all SNPs to omit the Indels ( cat /RAID/Data/linda/all_data/vc
     
 ## 10. Select Biallelic alternatives and SNPs
 
-/NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
-    -V merge.f.vcf.gz \
-    --restrict-alleles-to BIALLELIC \
-    -O merge.f.bi.vcf.gz
+cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/filter.biallelic.sh
 
-/NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
-    -select-type SNP \
-    -V merge.f.bi.vcf.gz \
-    -O merge.f.bi.snp.vcf.gz
+    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
+        -V merge.f.vcf.gz \
+        --restrict-alleles-to BIALLELIC \
+        -O merge.f.bi.vcf.gz
+        
+cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/filter.snp.sh
+
+    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
+        -select-type SNP \
+        -V merge.f.bi.vcf.gz \
+        -O merge.f.bi.snp.vcf.gz
 
 ## 11. Extract Mother and Daughter Pair 
+
+cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/extract.samples.sh
 
     $1=merge.f.bi.snp.vcf.gz
     vcftools --gzvcf $1 \
