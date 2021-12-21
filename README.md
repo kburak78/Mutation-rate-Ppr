@@ -2,6 +2,17 @@
 
 Sequences provided by CCG in September and October. September ones went already through umi_tools and trimming in https://github.com/wintergoldcrest/umi_tools. 
 
+## Samples
+
+FastaQ files provided by Cologne's Center for Genomics.
+
+S1 -> M6 
+S2 -> E6.2
+S3 -> M30
+S4 -> E30.7
+S5 -> M31 
+S6 -> E31.6
+
 ## 1. Umi tools and Trimming of October Data
 Trimming Illumina adapters and Umi adapters from raw reads.
 To look into the script: cat /RAID/Data/linda/october/test.sh
@@ -111,6 +122,8 @@ Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID
   
 
 ## 5. Hardfiltering the Variants
+
+-> Skip this step and go to 6. 
 
 For Filters I used this, which was also proposed for 
 QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0"
@@ -247,3 +260,71 @@ And then selected all SNPs to omit the Indels ( cat /RAID/Data/linda/all_data/vc
     -O ${i}.f.bi.snp.vcf.gz
     done
 
+## 9. Merging and Filtering the GVCFs
+
+    gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
+    ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
+
+    $gatk CombineGVCFs \
+            -R $ref -V  153621_S1.g.vcf -V 153622_S2.g.vcf -V 153623_S3.g.vcf -V 153624_S4.g.vcf -V 153625_S5.g.vcf -V 153626_S6.g.vcf -O merged_gvcf/merge.g.vcf.gz
+
+    $gatk GenotypeGVCFs \
+            -R $ref \
+            -V merged_gvcf/merge.g.vcf.gz \
+            -O merged_gvcf/merge.vcf.gz
+
+    $gatk SelectVariants \
+    -select-type SNP \
+    -V merged_gvcf/merge.vcf.gz \
+    -O merged_gvcf/merge.snp.vcf.gz
+
+    $gatk SelectVariants \
+    -select-type INDEL \
+    -V merged_gvcf/merge.vcf.gz \
+    -O merged_gvcf/merge.indel.vcf.gz
+
+    $gatk VariantFiltration \
+    -V merged_gvcf/merge.snp.vcf.gz \
+    --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
+    --filter-name "PASS" \
+    -O merged_gvcf/merge.snp.f.vcf.gz
+
+    $gatk VariantFiltration \
+    -V merged_gvcf/merge.indel.vcf.gz \
+    --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
+    --filter-name "PASS" \
+    -O merged_gvcf/merge.indel.f.vcf.gz
+
+    $gatk MergeVcfs \
+    -I merged_gvcf/merge.snp.f.vcf.gz \
+    -I merged_gvcf/merge.indel.f.vcf.gz \
+    -O merged_gvcf/merge.f.vcf.gz
+    
+## 10. Select Biallelic alternatives and SNPs
+
+/NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
+    -V merge.f.vcf.gz \
+    --restrict-alleles-to BIALLELIC \
+    -O merge.f.bi.vcf.gz
+
+/NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
+    -select-type SNP \
+    -V merge.f.bi.vcf.gz \
+    -O merge.f.bi.snp.vcf.gz
+
+## 11. Extract Mother and Daughter Pair 
+
+    $1=merge.f.bi.snp.vcf.gz
+    vcftools --gzvcf $1 \
+            --recode-INFO-all \
+            --maxDP 30 \
+            --minDP 10 \
+            --minQ 30 \
+            --recode \
+            --stdout \
+            --maf 0.05 \
+            --min-meanDP 20 \
+            --max-missing 0.95 \
+            --indv 153625_S5 \
+            --indv 153626_S6 \
+            --out s56.vcf > s56.vcf
