@@ -213,3 +213,37 @@ extract coding regions from gtf-file.
 coding_area.sh
 
 /RAID/Data/linda/all_data/mapped_data/genome_coverage/coding_area_gcov 
+
+## 8. Selected Biallelic SNPs
+In /RAID/Data/linda/all_data/vcf/f.biallelic
+
+First I used GATK SelectVariants to omit any multiallelic SNPs ( cat /RAID/Data/linda/all_data/vcf/f.biallelic/f.biallelic.sh ).
+
+    for i in 153621_S1 \
+    153622_S2 \
+    153623_S3 \
+    153624_S4 \
+    153625_S5 \
+    153626_S6
+    do
+    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
+    -V ../${i}.f.vcf.gz \
+    --restrict-alleles-to BIALLELIC \
+    -O ${i}.f.bi.vcf.gz
+    done
+
+And then selected all SNPs to omit the Indels ( cat /RAID/Data/linda/all_data/vcf/f.biallelic/select_SNPs.sh ).
+
+    for i in 153621_S1 \
+    153622_S2 \
+    153623_S3 \
+    153624_S4 \
+    153625_S5 \
+    153626_S6
+    do
+    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
+    -select-type SNP \
+    -V ${i}.f.bi.vcf.gz \
+    -O ${i}.f.bi.snp.vcf.gz
+    done
+
