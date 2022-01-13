@@ -70,124 +70,8 @@ bash nohup mapping.sh > mapping.log &
     done
 
 
-## 4. SNP and Indel calling 
 
-### with GATK 
-
-Calling Variants with HaplotypeCaller and GenotypeGVCF.
-
-Script in /RAID/Data/linda/all_data/sim_SNP_calling_w_GATK.sh
-
-    #software
-    gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
-    #reference_data
-    ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
-    bam=$1
-    out1=$2
-    out2=$3
-    #build dict for genome, this time not because I already had build one
-    #/NVME/Software/popgen/gatk-4.1.9.0/gatk CreateSequenceDictionary -R Ppr.FINAL.fa -O Ppr.FINAL.dict
-    #call gvcf
-    $gatk HaplotypeCaller \
-    -R $ref \
-    --emit-ref-confidence GVCF \
-    -I $bam \
-    -O $out1
-
-    #detect SNPs
-    $gatk GenotypeGVCFs \
-    -R $ref \
-    -V $out1 \
-    -O $out2
-
-    #compress
-    bgzip -f $out2
-    tabix -p vcf $out2.gz
-    
-To bash everything I used 'echo'. Script in /RAID/Data/linda/all_data/mapping.sh
-
-    for i in 153621_S1 \
-    153622_S2 \
-    153623_S3 \
-    153624_S4 \
-    153625_S5 \
-    153626_S6
-    do
-
-    echo "sh sim_SNP_calling_w_GATK.sh mapped_data/${i}.sort.de.bam vcf/${i}.g.vcf vcf/${i}.vcf " > shell/${i}.sh
-    nohup sh shell/${i}.sh/) > shell/$i.log &
-    done
-
-Commands and log in /RAID/Data/linda/all_data/shell, compressed results in /RAID/Data/linda/all_data/vcf.
-  
-
-## 5. Hardfiltering the Variants
-
--> Skip this step and go to 6. 
-
-For Filters I used this, which was also proposed for 
-QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0"
-QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0
-
-
-Script in /RAID/Data/linda/all_data/vcf/filter.sh
-
-    ###software
-    gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
-    ###data
-    ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
-    vcf=$1
-    snpvcf=$2
-    indelvcf=$3
-    filterSNP=$4
-    filterINDEL=$5
-    finalvcf=$6
-    ###SelectVariants SNP
-    $gatk SelectVariants \
-    -select-type SNP \
-    -V $vcf \
-    -O $snpvcf
-    ###SelectVariants INDEL
-    $gatk SelectVariants \
-    -select-type INDEL \
-    -V $vcf \
-    -O $indelvcf
-    ###filter SNP
-    $gatk VariantFiltration \
-    -V $snpvcf \
-    --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
-    --filter-name "PASS" \
-    -O $filterSNP
-    ###filter INDEL
-    $gatk VariantFiltration \
-    -V $indelvcf \
-    --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
-    --filter-name "PASS" \
-    -O $filterINDEL
-    ###merge SNP INDEL
-    $gatk MergeVcfs \
-    -I $filterSNP \
-    -I $filterINDEL \
-    -O $finalvcf
-    ###delete temp
-    rm -f $snpvcf $indelvcf $filterSNP $filterINDEL
-        
-        
-To run everything simultaneously and I used 'echo'.
-Script in /RAID/Data/linda/all_data/vcf/bash_filter_sim.sh
-
-    for i in A006200178_153621_S1 \
-    A006200178_153622_S2 \
-    A006200178_153623_S3 \
-    A006200178_153624_S4 \
-    A006200178_153625_S5 \
-    A006200178_153626_S6
-    do
-    echo "sh filter.sh ${i}.vcf.gz ${i}.snp.vcf.gz ${i}.indel.vcf.gz ${i}.f.snp.vcf.gz ${i}.f.indel.vcf.gz ${i}.f.vcf.gz" >filter_shell/${i}.f.sh
-    nohup sh filter_shell/${i}.f.sh > filter_shell/${i}.f.sh &
-    done
-
-## 6. Calculated the average genome coverage with bedtools
+## 3.1 Calculated the average genome coverage with bedtools
 
 Sorted BAM-Files in /RAID/Data/linda/all-files/mapped_data
 Script in cat RAID/Data/linda/all_data/mapped_data/genome_coverage/genome_coverage.sh
@@ -216,7 +100,7 @@ Average genome coverage of each sample in average-genomecov.all
     Average coverage of S5= 64.3218
     Average coverage of S6= 65.4336
 
-## 7. Identifying Coding and Non-coding regions with existing gtf-file
+## 3.2 Identifying Coding and Non-coding regions with existing gtf-file
 
 extract coding regions from gtf-file.
 
@@ -227,98 +111,48 @@ coding_area.sh
 
 /RAID/Data/linda/all_data/mapped_data/genome_coverage/coding_area_gcov 
 
-## 8. Selected Biallelic SNPs
-In /RAID/Data/linda/all_data/vcf/f.biallelic
+## 4. SNP Calling and filtering
 
-First I used GATK SelectVariants to omit any multiallelic SNPs ( cat /RAID/Data/linda/all_data/vcf/f.biallelic/f.biallelic.sh ).
+Combining Mother-daughter pairs with CombineGVCFs. Converting GVCF to VCF with GenotypeGVCFs. Filtering out SNPs with SelectVariant and filtering with VariantFiltration. And then omitting multiallelic SNPs. The following code is an example for the first mother and daughter pair.  
 
-    for i in 153621_S1 \
-    153622_S2 \
-    153623_S3 \
-    153624_S4 \
-    153625_S5 \
-    153626_S6
-    do
-    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
-    -V ../${i}.f.vcf.gz \
-    --restrict-alleles-to BIALLELIC \
-    -O ${i}.f.bi.vcf.gz
-    done
-
-And then selected all SNPs to omit the Indels ( cat /RAID/Data/linda/all_data/vcf/f.biallelic/select_SNPs.sh ).
-
-    for i in 153621_S1 \
-    153622_S2 \
-    153623_S3 \
-    153624_S4 \
-    153625_S5 \
-    153626_S6
-    do
-    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
-    -select-type SNP \
-    -V ${i}.f.bi.vcf.gz \
-    -O ${i}.f.bi.snp.vcf.gz
-    done
-
-## 9. Merging and Filtering the GVCFs
-
-cat /RAID/Data/linda/all_data/SNP_call_data_GATK/filter.merge.gvcf.sh
+Script in: /RAID/Data/linda/all_data/vcf/s12.filter.sh
 
     gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
     ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
 
     $gatk CombineGVCFs \
-            -R $ref -V  153621_S1.g.vcf -V 153622_S2.g.vcf -V 153623_S3.g.vcf -V 153624_S4.g.vcf -V 153625_S5.g.vcf -V 153626_S6.g.vcf -O merged_gvcf/merge.g.vcf.gz
+        -R $ref \
+        -V 153621_S1.g.vcf \
+        -V 153622_S2.g.vcf \
+        -O merged_gvcf/s12.g.vcf
 
     $gatk GenotypeGVCFs \
             -R $ref \
-            -V merged_gvcf/merge.g.vcf.gz \
-            -O merged_gvcf/merge.vcf.gz
+            -V merged_gvcf/s12.g.vcf \
+            -O merged_gvcf/s12.vcf.gz
 
+    # Filter out only SNPs from VCF 
     $gatk SelectVariants \
     -select-type SNP \
-    -V merged_gvcf/merge.vcf.gz \
-    -O merged_gvcf/merge.snp.vcf.gz
+    -V merged_gvcf/s12.vcf.gz \
+    -O merged_gvcf/s12.snp.vcf.gz
 
-    $gatk SelectVariants \
-    -select-type INDEL \
-    -V merged_gvcf/merge.vcf.gz \
-    -O merged_gvcf/merge.indel.vcf.gz
-
+    # filter SNPs by parameters
     $gatk VariantFiltration \
-    -V merged_gvcf/merge.snp.vcf.gz \
+    -V merged_gvcf/s12.snp.vcf.gz \
     --filter-expression "QD <2.0 || MQ <40.0 || FS >60.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
     --filter-name "PASS" \
-    -O merged_gvcf/merge.snp.f.vcf.gz
+    -O merged_gvcf/s12.snp.f.vcf.gz
 
-    $gatk VariantFiltration \
-    -V merged_gvcf/merge.indel.vcf.gz \
-    --filter-expression "QD <2.0 || FS >100.0 || SOR >5.0 || ReadPosRankSum < -8.0" \
-    --filter-name "PASS" \
-    -O merged_gvcf/merge.indel.f.vcf.gz
-
-    $gatk MergeVcfs \
-    -I merged_gvcf/merge.snp.f.vcf.gz \
-    -I merged_gvcf/merge.indel.f.vcf.gz \
-    -O merged_gvcf/merge.f.vcf.gz
-    
-## 10. Select Biallelic alternatives and SNPs
-
-cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/filter.biallelic.sh
-
-    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
-        -V merge.f.vcf.gz \
+    # filter for biallelic snps
+    $gatk SelectVariants \
+        -V merged_gvcf/s12.snp.f.vcf.gz \
         --restrict-alleles-to BIALLELIC \
-        -O merge.f.bi.vcf.gz
-        
-cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/filter.snp.sh
+        -O merged_gvcf/s12.all.vcf.gz
 
-    /NVME/Software/popgen/gatk-4.1.9.0/gatk SelectVariants \
-        -select-type SNP \
-        -V merge.f.bi.vcf.gz \
-        -O merge.f.bi.snp.vcf.gz
 
-## 11. Extract Mother and Daughter Pair 
+
+## 5. Extract Mother and Daughter Pair 
 
 cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/extract.samples.sh
 
