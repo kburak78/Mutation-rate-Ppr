@@ -111,7 +111,7 @@ coding_area.sh
 
 /RAID/Data/linda/all_data/mapped_data/genome_coverage/coding_area_gcov 
 
-## 4. SNP Calling and filtering
+## 4. Merging Mother and Daughter & SNP Calling
 
 Combining Mother-daughter pairs with CombineGVCFs. Converting GVCF to VCF with GenotypeGVCFs. Filtering out SNPs with SelectVariant and filtering with VariantFiltration. And then omitting multiallelic SNPs. The following code is an example for the first mother and daughter pair.  
 
@@ -152,21 +152,79 @@ Script in: /RAID/Data/linda/all_data/vcf/s12.filter.sh
 
 
 
-## 5. Extract Mother and Daughter Pair 
+## 5. Filtering SNPs
+Removed TE-Area: 
 
-cat /RAID/Data/linda/all_data/SNP_call_data_GATK/merged_gvcf/extract.samples.sh
+    for i in s12 s34 s56
+    do
+    #bedtools intersect -a ../$i.all.vcf.gz -b /home/shangao/Data/EDTA/Ppr/Ppr_instagrall/Ppr_instagrall.polished.fa.mod.EDTA.TEanno.gff3 -v > $i.all.removedTE.vcf
+    python /home/shangao/script/python/vcf_filter-same.3.py -s $i.all.removedTE.vcf -o $i.all.removedTE_fDP_hap.vcf
+    done
 
-    $1=merge.f.bi.snp.vcf.gz
-    vcftools --gzvcf $1 \
-            --recode-INFO-all \
-            --maxDP 30 \
-            --minDP 10 \
-            --minQ 30 \
-            --recode \
-            --stdout \
-            --maf 0.05 \
-            --min-meanDP 20 \
-            --max-missing 0.95 \
-            --indv 153625_S5 \
-            --indv 153626_S6 \
-            --out s56.vcf > s56.vcf
+Filtered out 
+-heterozygous mother SNPs.
+-all homozygous mother SNPs which had an allele depth under 60 the respective allele 
+-all homozygous daugther SNPs where either the reference or alternate allele depth is under 60
+-GQ under 60
+
+cat /home/shangao/script/python/vcf_filter-same.3.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0' or i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1':
+                if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0':
+                    if int(i[9].split(':')[1].split(',')[0])<=60:
+                        pass
+                    elif int(i[9].split(':')[1].split(',')[1])!=0:
+                        pass
+                if i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1':
+                    if int(i[9].split(':')[1].split(',')[0])!=0:
+                        pass
+                    elif int(i[9].split(':')[1].split(',')[1])<=60:
+                        pass
+                elif i[10].split(':')[0] == '0/1' or i[10].split(':')[0] == '0|1' or i[10].split(':')[0] == '1|0':
+                    if int(i[10].split(':')[1].split(',')[0])<=60:
+                        pass
+                    elif int(i[10].split(':')[1].split(',')[1])<=60:
+                        pass
+                    elif int(i[9].split(':')[3])<=90:
+                        pass
+                    elif int(i[10].split(':')[3])<=90:
+                        pass
+                    else:
+                        f3.write(l)
+                else:pass
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
