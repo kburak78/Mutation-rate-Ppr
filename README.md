@@ -162,10 +162,10 @@ Removed TE-Area:
     done
 
 Filtered out 
--heterozygous mother SNPs.
--all homozygous mother SNPs which had an allele depth under 60 the respective allele 
--all homozygous daugther SNPs where either the reference or alternate allele depth is under 60
--GQ under 60
+i) heterozygous mother SNPs.
+ii) all homozygous mother SNPs which had an allele depth under 60 the respective allele 
+iii) all homozygous daugther SNPs where either the reference or alternate allele depth is under 60
+iv) GQ under 60. Left were only Homozygous to Heterozygous SNPs with an allele depth over 60 for the supported allele and GQ over 60. 
 
 cat /home/shangao/script/python/vcf_filter-same.3.py
 
