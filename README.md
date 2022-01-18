@@ -240,4 +240,6 @@ What did I do differently to Linda?
 What could I have overseen? How many of them could be false-positives?
 Is it possible to calculate the mutation rate differently? 
 
-## Creating 
+## 7. Creating a gene density + karyogram graph 
+
+## 8. Creating a PCA Graph
