@@ -66,7 +66,9 @@ bash nohup mapping.sh > mapping.log &
     samtools view -bS mapped_data//${i}.sam > mapped_data//${i}.bam
     samtools sort mapped_data/${i}.bam -o mapped_data/${i}.sort.bam
     samtools index mapped_data/${i}.sort.bam
-    umi_tools dedup -I mapped_data/${i}.sort.bam --output-stats=deduplicated --paired -S mapped_data/${i}.sort.de.bam --temp-dir=tmp 
+    umi_tools dedup -I mapped_data/${i}.sort.bam --output-stats=deduplicated --paired -S mapped_data/${i}.sort.de.bam --temp-dir=tmp
+    samtools index mapped_data/${i}.sort.de.bam
+
     done
 
 
@@ -111,7 +113,52 @@ coding_area.sh
 
 /RAID/Data/linda/all_data/mapped_data/genome_coverage/coding_area_gcov 
 
-## 4. Merging Mother and Daughter & SNP Calling
+## 4. Creating VCF-files
+
+Creating a GVCF and VCF-File with GATK HaplotypeCaller and GenotypeGVFCs.
+
+Script in cat /RAID/Data/linda/all_data/sim_SNP_calling_w_GATK.sh
+
+    ###software
+    gatk=/NVME/Software/popgen/gatk-4.1.9.0/gatk
+    ###data
+    ref=/RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa
+    bam=$1
+    out1=$2
+    out2=$3
+    ###build dict for genome
+    #/NVME/Software/popgen/gatk-4.1.9.0/gatk CreateSequenceDictionary -R Ppr.FINAL.fa -O Ppr.FINAL.dict
+    ###call gvcf
+    $gatk HaplotypeCaller \
+            -R $ref \
+            --emit-ref-confidence GVCF \
+            -I $bam \
+            -O $out1
+
+    ###detect SNPs
+    $gatk GenotypeGVCFs \
+            -R $ref \
+            -V $out1 \
+            -O $out2
+
+    ###compress
+    bgzip -f $out2
+    tabix -p vcf $out2.gz
+    
+Executed with: cat /RAID/Data/linda/all_data/mapping.sh
+
+        for i in 153621_S1 \
+        153622_S2 \
+        153623_S3 \
+        153624_S4 \
+        153625_S5 \
+        153626_S6
+        do
+        echo "sh sim_SNP_calling_w_GATK.sh mapped_data/${i}.sort.de.bam vcf/${i}.g.vcf vcf/${i}.vcf " > shell/$i.sh
+        nohup sh shell/$i.sh > shell/$i.log &
+        done
+
+## 5. Merging Mother and Daughter & SNP Calling
 
 Combining Mother-daughter pairs with CombineGVCFs. Converting GVCF to VCF with GenotypeGVCFs. Filtering out SNPs with SelectVariant and filtering with VariantFiltration. And then omitting multiallelic SNPs. The following code is an example for the first mother and daughter pair.  
 
@@ -152,7 +199,7 @@ Script in: /RAID/Data/linda/all_data/vcf/s12.filter.sh
 
 
 
-## 5. Filtering SNPs
+## 6. Filtering SNPs
 Removed TE-Area: 
 
     for i in s12 s34 s56
@@ -228,7 +275,7 @@ cat /home/shangao/script/python/vcf_filter-same.3.py
     f3.close()
     #f4.close()
 
-## 6. Calculating Mutation rate 
+## 7. Calculating Mutation rate 
 
 The Mutation rate can be calculated as: 
 
@@ -240,6 +287,6 @@ What did I do differently to Linda?
 What could I have overseen? How many of them could be false-positives?
 Is it possible to calculate the mutation rate differently? 
 
-## 7. Creating a gene density + karyogram graph 
+## 8. Creating a gene density + karyogram graph 
 
-## 8. Creating a PCA Graph
+## 9. Creating a PCA Graph
