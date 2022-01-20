@@ -316,3 +316,38 @@ I had to errors, which one I solved by switching to Shan's account and activatin
     
 ## 9. Calculating the Average, Median and Variance of Coverage 
 
+Calculated the median of each sample: 
+
+    >cat /RAID/Data/linda/all_data/mapped_data/genome_coverage/genome_coverage.sh
+    for i in 153621_S1 \
+    153622_S2 \
+    153623_S3 \
+    153624_S4 \
+    153625_S5 \
+    153626_S6
+    do
+    awk '{print $4}' ${i}_genome_coverage | sort -n | awk ' { a[i++]=$1; } END { x=int((i+1)/2); print a[x-1]; }' >> median.txt
+    done
+
+    >cat /RAID/Data/linda/all_data/mapped_data/genome_coverage/median.txt 
+    72
+    71
+    72
+    78
+    71
+    72
+
+Something is strange with this: 
+
+(base) linda@bast-work-1:/RAID/Data/linda/all_data/mapped_data/genome_coverage$ awk -v OFS='\t' '{print $4}' 153621_S1_genome_coverage | sort -nr | head
+86350
+86349
+86349
+86346
+86344
+86342
+86340
+86339
+86338
+
+-> coverage over 80000??
