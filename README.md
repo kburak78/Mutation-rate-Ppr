@@ -62,7 +62,7 @@ bash nohup mapping.sh > mapping.log &
     153625_S5 \
     153626_S6
     do
-    bwa mem -t 40 -R "@RG\tID:${i}\tSM:${i}\tLB:${i}\tPL:Illumina" /RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa ${i$
+    bwa mem -t 40 -R "@RG\tID:${i}\tSM:${i}\tLB:${i}\tPL:Illumina" /RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa ${i}.R1_val_1.fq.gz ${i}.R3_val_2.fq.gz > mapped_data/${i}.sam
     samtools view -bS mapped_data//${i}.sam > mapped_data//${i}.bam
     samtools sort mapped_data/${i}.bam -o mapped_data/${i}.sort.bam
     samtools index mapped_data/${i}.sort.bam
@@ -101,6 +101,8 @@ Average genome coverage of each sample in average-genomecov.all
     Average coverage of S4= 71.9713
     Average coverage of S5= 64.3218
     Average coverage of S6= 65.4336
+    
+Average genome coverage for all samples is 66.64715. 
 
 ## 3.2 Identifying Coding and Non-coding regions with existing gtf-file
 
@@ -337,17 +339,7 @@ Calculated the median of each sample:
     71
     72
 
-Something is strange with this: 
+## 10. Coverage range 
 
-(base) linda@bast-work-1:/RAID/Data/linda/all_data/mapped_data/genome_coverage$ awk -v OFS='\t' '{print $4}' 153621_S1_genome_coverage | sort -nr | head
-86350
-86349
-86349
-86346
-86344
-86342
-86340
-86339
-86338
+I define of callable sites between 50% and 150% of the average, which would be [33.32;99.97]= [34;100], because the average coverage for all samples is 66.64715.
 
--> coverage over 80000??
