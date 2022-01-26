@@ -347,6 +347,8 @@ I define of callable sites between 50% and 150% of the average, which would be [
 
 adding header to hf and gcov filtered data:
 
+cat /RAID/Data/linda/Mother_Egg_Pairs_Ppr/vcf/merged_gvcf/filter/SNPs_after_gcov_filter/addheader.sh
+
     less /RAID/Data/linda/Mother_Egg_Pairs_Ppr/vcf/merged_gvcf/SNPs_Hardfilters/s12.snp.f.vcf.gz | grep '#' > s12header | cat s12header /RAID/Data/linda/Mother_Egg_Pairs_Ppr/vcf/merged_gvcf/SNPs_Hardfilters_gcov/s12.snp.f.gcov.vcf > s12.snp.hf.gcov.wheader.vcf
 
     less /RAID/Data/linda/Mother_Egg_Pairs_Ppr/vcf/merged_gvcf/SNPs_Hardfilters/s34.snp.f.vcf.gz | grep '#' > s34header | cat s34header /RAID/Data/linda/Mother_Egg_Pairs_Ppr/vcf/merged_gvcf/SNPs_Hardfilters_gcov/s34.snp.f.gcov.vcf > s34.snp.hf.gcov.wheader.vcf
