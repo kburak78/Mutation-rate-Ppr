@@ -1,0 +1,75 @@
+## 6. Filtering SNPs
+Removed TE-Area: 
+
+    for i in s12 s34 s56
+    do
+    #bedtools intersect -a ../$i.all.vcf.gz -b /home/shangao/Data/EDTA/Ppr/Ppr_instagrall/Ppr_instagrall.polished.fa.mod.EDTA.TEanno.gff3 -v > $i.all.removedTE.vcf
+    python /home/shangao/script/python/vcf_filter-same.3.py -s $i.all.removedTE.vcf -o $i.all.removedTE_fDP_hap.vcf
+    done
+
+Filtered out 
+i) heterozygous mother SNPs.
+ii) all homozygous mother SNPs which had an allele depth under 60 the respective allele 
+iii) all homozygous daugther SNPs where either the reference or alternate allele depth is under 60
+iv) GQ under 60. Left were only Homozygous to Heterozygous SNPs with an allele depth over 60 for the supported allele and GQ over 60. 
+
+cat /home/shangao/script/python/vcf_filter-same.3.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0' or i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1':
+                if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0':
+                    if int(i[9].split(':')[1].split(',')[0])<=60:
+                        pass
+                    elif int(i[9].split(':')[1].split(',')[1])!=0:
+                        pass
+                if i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1':
+                    if int(i[9].split(':')[1].split(',')[0])!=0:
+                        pass
+                    elif int(i[9].split(':')[1].split(',')[1])<=60:
+                        pass
+                elif i[10].split(':')[0] == '0/1' or i[10].split(':')[0] == '0|1' or i[10].split(':')[0] == '1|0':
+                    if int(i[10].split(':')[1].split(',')[0])<=60:
+                        pass
+                    elif int(i[10].split(':')[1].split(',')[1])<=60:
+                        pass
+                    elif int(i[9].split(':')[3])<=90:
+                        pass
+                    elif int(i[10].split(':')[3])<=90:
+                        pass
+                    else:
+                        f3.write(l)
+                else:pass
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
