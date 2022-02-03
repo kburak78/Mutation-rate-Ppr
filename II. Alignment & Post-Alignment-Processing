@@ -1,0 +1,24 @@
+## 3. Mapping 
+Mapping trimmed reads to the reference genome.
+To look into script: cat /RAID/Data/linda/all_data/mapping.sh 
+
+bwa index ref.fe
+conda activate umi_tools
+bash nohup mapping.sh > mapping.log &
+
+    for i in 153621_S1 \
+    153622_S2 \
+    153623_S3 \
+    153624_S4 \
+    153625_S5 \
+    153626_S6
+    do
+    bwa mem -t 40 -R "@RG\tID:${i}\tSM:${i}\tLB:${i}\tPL:Illumina" /RAID/Data/mites/genomes/Ppr/version03/Ppr_instagrall.polished.FINAL.fa ${i}.R1_val_1.fq.gz ${i}.R3_val_2.fq.gz > mapped_data/${i}.sam
+    samtools view -bS mapped_data//${i}.sam > mapped_data//${i}.bam
+    samtools sort mapped_data/${i}.bam -o mapped_data/${i}.sort.bam
+    samtools index mapped_data/${i}.sort.bam
+    umi_tools dedup -I mapped_data/${i}.sort.bam --output-stats=deduplicated --paired -S mapped_data/${i}.sort.de.bam --temp-dir=tmp
+    samtools index mapped_data/${i}.sort.de.bam
+
+    done
+
