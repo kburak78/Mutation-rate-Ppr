@@ -12,7 +12,8 @@ Data in /Scratch/gaoshan/breaker/05RIdeogram_plot/potato/
     > karyo <- read.table("karyotype.txt", sep = "\t", header = T, stringsAsFactors = F)
     > ideogram(karyotype = karyo, label = mut, label_type = "marker")
     > convertSVG("chromosome.svg", device = "png")
-    I had to errors, which one I solved by switching to Shan's account and activating BRAKER. The other one was solves like this: 
+ 
+ I had to errors, which one I solved by switching to Shan's account and activating BRAKER. The other one was solves like this: 
 
     Error: C stack usage is too close to the limit 
     $ ulimit -s # print default
