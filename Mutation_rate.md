@@ -154,6 +154,8 @@ Average genome coverage of each sample in average-genomecov.all
     Average coverage of S4= 71.9713
     Average coverage of S5= 64.3218
     Average coverage of S6= 65.4336
+    Average coverage of S7= 48.6768
+    Average coverage of S8= 61.8719
     
 Average genome coverage for all samples is 66.64715. 
 
