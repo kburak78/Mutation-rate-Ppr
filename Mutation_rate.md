@@ -20,6 +20,7 @@ The file is structured as follows:
     2. [Filter GT](#GT1)
     3. [Filter GQ & PL](#GQ1)
     4. [Filter AD](#AD1)
+    5. [Count positions](#count)
 6. [Calculating the mutation rate](#Mutrate)
 
 You will also find two other files in the repository: 
@@ -157,8 +158,295 @@ Average genome coverage of each sample in average-genomecov.all
 Average genome coverage for all samples is 66.64715. 
 
 ### ii. Filter GT <a name="GT"> </a>
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            #Mother must be homozygous, Daughter must be heterozygous. Everything else will be passed.
+            if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0' or i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1':
+                if i[10].split(':')[0] == '0/1' or i[10].split(':')[0] == '0|1' or i[10].split(':')[0] == '1|0' or i[10].split(':')[0] == '2|1' or i[10].split(':')[0] == '1|2' or i[10].split(':')[0] == '1/2' or i[10].split(':')[0] == '0|2' or i[10].split(':')[0] == '2|0':
+                    f3.write(l)
+                else:pass 
+            else:pass
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
 ### iii. Filter GQ and PL <a name="GQ"> </a>
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+
+            #GQ equal or under 98 will be passed
+            if int(i[9].split(':')[3]) <= 98 or int(i[10].split(':')[3]) <= 98:
+                pass
+
+            #if PL is in the 7th position in FORMAT
+            if 'PGT' in i[8]:
+                #PL values are sorted in increasing order for both samples
+                #e.g. a PL like this [100, 0, 500], will be sorted to [0, 100, 500]
+                l2 = i[9].split(':')[6].split(',')
+                if '.' in l2: pass
+                else: PL2 = sorted([int(x) for x in l2]) 
+
+                l3 = i[10].split(':')[6].split(',')
+                if '.' in l3: pass
+                else: PL3 = sorted([int(x) for x in l3])      
+
+                #if second likeliest PL is 0, the difference between the third and second likeliest PL is calculated. If the second likeliest PL is not zero the difference between second likeliest and most likely PL is calculated. For the Mother the must be a difference over 200 and for the daughter a difference of over 100. 
+                if int(PL2[1]) == 0 and  int(PL2[2]) - int(PL2[1]) < 120:
+                        pass
+                elif int(PL3[1]) == 0 and int(PL3[2]) - int(PL3[1]) < 100:
+                        pass
+                elif int(PL2[1]) != 0 and int(PL2[1]) - int(PL2[0]) < 120:
+                    pass
+                elif int(PL3[1]) != 0 and int(PL3[1]) - int(PL3[0]) < 100:
+                    pass
+                else: f3.write(l)
+            else: 
+                l0 = i[9].split(':')[4].split(',')
+                if '.' in l0: pass
+                else: PL0 = sorted([int(x) for x in l0])
+
+                l1 = i[10].split(':')[4].split(',')
+                if '.' in l1: pass
+                else: PL1 = sorted([int(x) for x in l1])
+
+                if int(PL0[1]) == 0 and int(PL0[2]) - int(PL0[1]) < 120:
+                        pass
+                elif int(PL1[1]) == 0 and int(PL1[2]) - int(PL1[1]) < 100:
+                        pass
+                elif int(PL0[1]) != 0 and int(PL0[1]) - int(PL0[0]) < 120:
+                    pass
+                elif int(PL1[1]) != 0 and int(PL1[1]) - int(PL1[0]) < 100: 
+                    pass
+                else: f3.write(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+
 ### iv. Filter AD <a name="AD"> </a>
+
+cat filter.AD.Mom.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()[9].split(':')[1].split(',')
+            # if there are 3 AD values for the Mother, one should be over 59   
+            if len(i) == 3:
+                if i[0] == '0' and i[1] == '0' :
+                    f3.write(l)
+                elif i[0] == '0'  and i[2] == '0':
+                    f3.write(l)
+                elif  i[1] == '0' and i[2] == '0':
+                    f3.write(l)
+                else: pass
+            elif len(i) == 2:
+                if i[0] == '0':
+                    f3.write(l)
+                elif i[1] == '0' :
+                    f3.write(l)
+                else: pass
+            else: print(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+cat filter.AD.Daughter1.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            # Sum of all AD reads must equal the number of total reads (DP)
+            if len(i[10].split(':')[1].split(',')) == 2:
+                if int(i[10].split(':')[1].split(',')[0]) + int(i[10].split(':')[1].split(',')[1]) == int(i[10].split(':')[2]):
+                    f3.write(l)
+                else: pass
+            elif len(i[10].split(':')[1].split(',')) == 3:
+                if int(i[10].split(':')[1].split(',')[0]) + int(i[10].split(':')[1].split(',')[1]) + int(i[10].split(':')[1].split(',')[2]) == int(i[10].split(':')[2]):
+                    f3.write(l)
+                else: pass
+            else: print(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+    
+  
+  cat filter.AD.Daughter2.py 
+  
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()[10].split(':')[1].split(',')
+            if len(i) == 2:
+                if int(i[0]) > 27 and int(i[1]) > 27:
+                    f3.write(l)
+                else: pass
+            elif len(i) == 3:
+                if int(i[0]) > 27 and int(i[1]) > 27:
+                    f3.write(l)
+                elif int(i[0]) > 27 and int(i[2]) > 27:
+                    f3.write(l)
+                elif int(i[2]) > 27 and int(i[1]) > 27:
+                    f3.write(l)
+                else: pass
+            else: print(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
 
 - - - -
 ## 5. Callable Genome estimation <a name="CG"> </a>
@@ -168,9 +456,346 @@ adding header to hf and gcov filtered data:
 cat /RAID/Data/linda/Mother_Egg_Pairs_Ppr/vcf/merged_gvcf/filter/SNPs_after_gcov_filter/addheader.sh
 
 ### i. Filter DP <a name="DP1"> </a>
+
+cat filter.hap.DP.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+        if '#' in l:
+            pass
+        else:
+            i=l.strip().split()
+            if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0' or i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1':
+                if 'AD' not in i[8]:
+                    if 31<=int(i[9].split(':')[1])<=124:
+                        f3.write(l)
+                    else:pass
+                elif 31<=int(i[9].split(':')[2])<=124:
+                        f3.write(l)
+                else:pass
+            else:pass
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
 ### ii. Filter GT <a name="GT1"> </a>
+
+see i. filter DP 
+
 ### iii. Filter GQ and PL <a name="GQ1"> </a>
+
+cat filter.GQ.py
+ 
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            if 'AD' not in i[8]:
+                if int(i[9].split(':')[2]) <= 98:
+                    pass
+                else: f3.write(l)
+            elif 'AD' in i[8]:
+                if int(i[9].split(':')[3]) <= 98:
+                    pass
+                else: f3.write(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+    
+cat filter.PL.py
+    
+        import sys
+        import getopt
+        import os
+        def usage():
+            print('''Useage: python script.py [option] [parameter]
+            -s/input_file           input the lift file 
+            -t/temp                 blasr_result
+            -l/length                novel_seq
+            -o/--output              the output results file
+            -h/--help                show possible options''')
+        #######################default
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+        for op, value in opts:
+            if op == "-s" or op=="--sequence_file":
+                sequence_file = value
+            elif op == "-o" or op =="--output": 
+                output = value
+            elif op == "-l" or op =="--length": 
+                length = value
+            elif op == "-t" or op =="--temp": 
+                temp = value
+            elif op == "-h" or op == "--help":
+                usage()
+                sys.exit(1)
+        f1=open(sequence_file)
+        #f2=open(temp)
+        #f4=open(length,'w')
+        f3=open(output,'w')
+        total={}
+        for l in f1.readlines():
+                i=l.strip().split()
+                if 'PGT' in i[8]:
+                    l0 = i[9].split(':')[6].split(',')
+                    if '.' in l0: pass
+                    else: PL0 = sorted([int(x) for x in l0])
+
+                    if int(PL0[1]) == 0 and  int(PL0[0]) == 0:
+                        if int(PL0[2]) - int(PL0[1]) < 120:
+                            pass
+                        else: f3.write(l)
+                    elif int(PL0[1]) - int(PL0[0]) < 120:
+                        pass
+                    else: f3.write(l)
+
+                else:
+                    l1 = i[9].split(':')[4].split(',')
+                    if '.' in l1: pass
+                    else: PL1 = sorted([int(x) for x in l1])
+
+                    if int(PL1[1]) == 0 and  int(PL1[0]) == 0:
+                        if int(PL1[2]) - int(PL1[1]) < 120:
+                            pass
+                        else: f3.write(l)
+                    elif int(PL1[1]) - int(PL1[0]) < 120:
+                        pass
+                    else: f3.write(l)
+
+        f1.close()
+        #f2.close()
+        f3.close()
+        #f4.close()
+
+
 ### iv. Filter AD <a name="AD1"> </a>
+
+ cat filter.AD.py
+ 
+         import sys
+        import getopt
+        import os
+        def usage():
+            print('''Useage: python script.py [option] [parameter]
+            -s/input_file           input the lift file 
+            -t/temp                 blasr_result
+            -l/length                novel_seq
+            -o/--output              the output results file
+            -h/--help                show possible options''')
+        #######################default
+        opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+        for op, value in opts:
+            if op == "-s" or op=="--sequence_file":
+                sequence_file = value
+            elif op == "-o" or op =="--output": 
+                output = value
+            elif op == "-l" or op =="--length": 
+                length = value
+            elif op == "-t" or op =="--temp": 
+                temp = value
+            elif op == "-h" or op == "--help":
+                usage()
+                sys.exit(1)
+        f1=open(sequence_file)
+        #f2=open(temp)
+        #f4=open(length,'w')
+        f3=open(output,'w')
+        total={}
+        for l in f1.readlines():
+                i=l.strip().split()[9].split(':')[1].split(',')
+
+                if 'AD' not in l.strip().split()[8]:
+                    f3.write(l)
+                else:
+                    if 'AD'  in l.strip().split()[8]:
+                    # if content is 3 possible outcomes are
+                        if len(i) == 3:
+                            if i[0] == '0' and i[1] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[2] == '0':
+                                f3.write(l)
+                            elif i[1] == '0' and i[2] == '0':
+                                f3.write(l)
+                            else: pass
+                        elif len(i) == 2:
+                            if i[0] == '0':
+                                f3.write(l)
+                            elif i[1] == '0' :
+                                f3.write(l)
+                            else: pass
+                        elif len(i) == 4:
+                            if i[0] == '0' and i[1] == '0' and i[3] == '0':
+                                f3.write(l)
+                            elif i[0] == '0'  and i[2] == '0' and i[3] == '0':
+                                f3.write(l)
+                            elif  i[1] == '0' and i[2] == '0' and i[3] == '0':
+                                f3.write(l)
+                            elif  i[1] == '0' and i[2] == '0' and i[0] == '0':
+                                f3.write(l)
+                            else: pass
+                        elif len(i) == 5:
+                            if i[0] == '0' and i[1] == '0' and i[3] == '0' and i[4] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[2] == '0' and i[3] == '0' and i[4] == '0':
+                                f3.write(l)
+                            elif i[1] == '0' and i[2] == '0' and i[3] == '0' and i[4] == '0':
+                                f3.write(l)
+                            elif i[1] == '0' and i[2] == '0' and i[0] == '0'and i[3] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[1] == '0' and i[2] == '0'and i[4] == '0':
+                                f3.write(l)
+                            else: pass
+                        elif len(i) == 6:
+                            if i[0] == '0' and i[1] == '0' and i[2] == '0' and i[3] == '0' and i[4] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[2] == '0' and i[3] == '0' and i[4] == '0' and i[5] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[1] == '0' and i[3] == '0' and i[4] == '0' and i[5] == '0':
+                                f3.write(l)
+                            elif i[1] == '0' and i[2] == '0' and i[3] == '0' and i[4] == '0' and i[5] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[1] == '0' and i[2] == '0'and i[3] == '0'and i[5] == '0':
+                                f3.write(l)
+                            elif i[0] == '0' and i[1] == '0' and i[2] == '0'and i[4] == '0' and i[5] == '0':
+                                f3.write(l)
+                            else: pass
+
+        f1.close()
+        #f2.close()
+        f3.close()
+        #f4.close()
+
+
+### v. Count positions <a name="count"> </a>
+
+cat count_positions.sh
+
+    for i in s1 \
+        s3 \
+        s5
+    do
+
+    python count_positions.py -s ../filter.DP.GT/${i}.DP.GT.g.vcf -o ${i}.DP.GT.txt
+    awk '{sum+= $1} END {print sum}' ${i}.DP.GT.txt > ${i}.DP.GT.positions
+
+    python count_positions.py -s ../filter.DP.GT.GQ/${i}.DP.GT.GQ.g.vcf -o ${i}.DP.GT.GQ.txt
+    awk '{sum+= $1} END {print sum}' ${i}.DP.GT.GQ.txt > ${i}.DP.GT.GQ.positions
+
+    python count_positions.py -s ../filter.DP.GT.GQ.PL/${i}.DP.GT.GQ.PL.g.vcf -o ${i}.DP.GT.GQ.PL.txt
+    awk '{sum+= $1} END {print sum}' ${i}.DP.GT.GQ.PL.txt > ${i}.DP.GT.GQ.PL.positions
+
+    python count_positions.py -s ../filter.DP.GT.GQ.PL.AD/${i}.DP.GT.GQ.PL.AD.g.vcf -o ${i}.DP.GT.GQ.PL.AD.txt
+    awk '{sum+= $1} END {print sum}' ${i}.DP.GT.GQ.PL.AD.txt > ${i}.DP.GT.GQ.PL.AD.positions
+
+    cat ${i}.DP.GT.positions ${i}.DP.GT.GQ.positions ${i}.DP.GT.GQ.PL.positions ${i}.DP.GT.GQ.PL.AD.positions > ${i}.all.positions
+
+    rm ${i}.DP.GT.txt
+    rm ${i}.DP.GT.GQ.txt
+    rm ${i}.DP.GT.GQ.PL.txt
+    rm ${i}.DP.GT.GQ.PL.AD.txt
+
+cat count_positions.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            if '.' in i[7]:
+                f3.write('1\n')
+            elif int(i[7].split('=')[1]) == int(i[1]):
+                f3.write('1\n')
+            else: f3.write(str(int(i[7].split('=')[1])-int(i[1]))+'\n')
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
 
 - - - -
 ## 6. Calculating the mutation rate <a name="Mutrate"> </a> 
