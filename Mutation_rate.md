@@ -22,6 +22,18 @@ The file is structured as follows:
     4. [Filter AD](#AD1)
     5. [Count positions](#count)
 6. [Calculating the mutation rate](#Mutrate)
+7. [Detect LoH sites](#LoH)
+    1. [Filter DP and GT](#DP2)
+    2. [Filter GQ & PL](#GQ2)
+    3. [Filter AD](#AD2)
+8. [Callable genome estimation of LoH](#CGforLoH)
+    1. [Filter DP](#DP3)
+    2. [Filter GT](#GT3)
+    3. [Filter GQ & PL](#GQ3)
+    4. [Filter AD](#AD3)
+    5. [Count positions](#count3)
+9. [Calculating the LoH rate](#LoHrate)
+
 
 You will also find two other files in the repository: 
 'R Graphs' - the scripts to visualize the results 
@@ -806,7 +818,6 @@ The Mutation rate can be calculated as:
 
 Mutation counts / (2 x callable sites) = Mutation rate 
 
-With the first calculations something between 1-2x10^-6 comes out which would be higher then for example spider mites. If Ppr has a lower mutation rate we would expect something under around 1*10^-9. 
 
 ### Identifying Coding and Non-coding regions with existing gtf-file
 
@@ -817,3 +828,714 @@ extract coding regions from gtf-file.
     coding_area.sh
 
 /RAID/Data/linda/all_data/mapped_data/genome_coverage/coding_area_gcov 
+
+- - - -
+## 7. Detect LoH sites <a name="LoH"> </a> 
+
+### i. Filter DP <a name="DP2"> </a>
+
+cat filter.DP.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output":
+            output = value
+        elif op == "-l" or op =="--length":
+            length = value
+        elif op == "-t" or op =="--temp":
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+        if '#' in l:
+            pass
+        else:
+            i=l.strip().split()
+            #if DP is '.' pass
+            if i[10].split(':')[0][0] == '.':
+                pass
+            elif i[9].split(':')[0][0] == '.':
+                pass
+            #DP for first and second sample must be between 50% and 200% of the average DP of all samples
+            elif 28 <= int(i[9].split(':')[2]) <=115 and 28 <= int(i[10].split(':')[2]) <=115:
+                f3.write(l)
+            else: pass
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+### ii. Filter GT <a name="GT2"> </a>
+
+cat filter.hap.py 
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            #Mother must be heterozygous, Daughter must be homozygous. Everything else will be passed.
+            if i[10].split(':')[0] == '0/0' or i[10].split(':')[0] == '0|0' or i[10].split(':')[0] == '1/1' or i[10].split(':')[0] == '1|1':
+                if i[9].split(':')[0] == '0/1' or i[9].split(':')[0] == '0|1' or i[9].split(':')[0] == '1|0' or i[9].split(':')[0] == '2|1' or i[9].split(':')[0] == '1|2' or i[9].split(':')[0] == '1/2' or i[9].split(':')[0] == '0/2' or i[9].split(':')[0] == '0|2' or i[9].split(':')[0] == '2|0':
+                    f3.write(l)
+                else:pass 
+            else:pass
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+### iii. Filter GQ & PL <a name="GQ2"> </a>
+
+cat filter.GQ.PL.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+
+            #GQ equal or under 98 will be passed
+            if int(i[9].split(':')[3]) <= 98 or int(i[10].split(':')[3]) <= 98:
+                pass
+
+            #if PL is in the 7th position in FORMAT
+            if 'PGT' in i[8]:
+                #PL values are sorted in increasing order for both samples
+                #e.g. a PL like this [100, 0, 500], will be sorted to [0, 100, 500]
+                l2 = i[9].split(':')[6].split(',')
+                if '.' in l2: pass
+                else: PL2 = sorted([int(x) for x in l2]) 
+
+                l3 = i[10].split(':')[6].split(',')
+                if '.' in l3: pass
+                else: PL3 = sorted([int(x) for x in l3])      
+
+                #if second likeliest PL is 0, the difference between the third and second likeliest PL is calculated. If the second likeliest PL is not zero the difference between second likeliest and most likely PL is calculated. For the Mother the must be a difference over 200 and for the daughter a difference of over 100. 
+                if int(PL2[1]) == 0 and  int(PL2[2]) - int(PL2[1]) < 200:
+                        pass
+                elif int(PL3[1]) == 0 and int(PL3[2]) - int(PL3[1]) < 200:
+                        pass
+                elif int(PL2[1]) != 0 and int(PL2[1]) - int(PL2[0]) < 200:
+                    pass
+                elif int(PL3[1]) != 0 and int(PL3[1]) - int(PL3[0]) < 200:
+                    pass
+                else: f3.write(l)
+            #same as above for if PL is in the 5th position of FORMAT
+            else: 
+                l0 = i[9].split(':')[4].split(',')
+                if '.' in l0: pass
+                else: PL0 = sorted([int(x) for x in l0])
+
+                l1 = i[10].split(':')[4].split(',')
+                if '.' in l1: pass
+                else: PL1 = sorted([int(x) for x in l1])
+
+                if int(PL0[1]) == 0 and int(PL0[2]) - int(PL0[1]) < 200:
+                        pass
+                elif int(PL1[1]) == 0 and int(PL1[2]) - int(PL1[1]) < 200:
+                        pass
+                elif int(PL0[1]) != 0 and int(PL0[1]) - int(PL0[0]) < 200:
+                    pass
+                elif int(PL1[1]) != 0 and int(PL1[1]) - int(PL1[0]) < 200: 
+                    pass
+                else: f3.write(l)
+
+
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+### iv. Filter AD <a name="AD2"> </a>
+
+    cat filter.AD.Daughter.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()[10].split(':')[1].split(',')
+            # One Allele should be supported with over 55 reads (which is 10% less then the average read depth)   
+            if len(i) == 3:
+                if i[0] == '0' and i[1] == '0':
+                    f3.write(l)
+                elif i[0] == '0' and i[2] == '0':
+                    f3.write(l)
+                elif i[1] == '0' and i[2] == '0':
+                    f3.write(l)
+                else: pass
+            elif len(i) == 2:
+                if i[0] == '0' :
+                    f3.write(l)
+                elif i[1] == '0':
+                    f3.write(l)
+                else: pass
+            else: print(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+cat filter.AD.Mother1.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            # if content has  3 possible outcome, sort the numbers
+            if len(i[9].split(':')[1].split(',')) == 2 and int(i[9].split(':')[1].split(',')[0]) + int(i[9].split(':')[1].split(',')[1]) != int(i[9].split(':')[2]):
+                    pass
+            elif len(i[9].split(':')[1].split(',')) == 3 and int(i[9].split(':')[1].split(',')[0]) + int(i[9].split(':')[1].split(',')[1]) + int(i[9].split(':')[1].split(',')[2]) != int(i[9].split(':')[2]):
+                    pass
+            else: f3.write(l)
+
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+cat filter.AD.Mother2.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()[9].split(':')[1].split(',')
+            #two Alleles should be supported with at least 26 reads (which is 10% less then 0.5x of the average read dept (which is 10% less then 0.5x of the average read depth)) 
+            if len(i) == 2:
+                if int(i[0]) > 25 and int(i[1]) > 25:
+                    f3.write(l)
+                else: pass
+            elif len(i) == 3:
+                if int(i[0]) > 25 and int(i[1]) > 25:
+                    f3.write(l)
+                elif int(i[0]) > 25 and int(i[2]) > 25:
+                    f3.write(l)
+                elif int(i[2]) > 25 and int(i[1]) > 25:
+                    f3.write(l)
+                else: pass
+            else: print(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+----
+
+## 8. Callable genome estimation of LoH <a name="CGforLoH"> </a>
+
+### i. Filter DP & GT <a name="DP3"> </a>
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+        if '#' in l:
+            pass
+        else:
+            i=l.strip().split()
+            if i[9].split(':')[0] == '0/0' or i[9].split(':')[0] == '0|0' or i[9].split(':')[0] == '1/1' or i[9].split(':')[0] == '1|1' or i[9].split(':')[0] == '2/2' or i[9].split(':')[0] == '2|2':
+                pass
+            elif 'AD' not in i[8]:
+                pass
+            elif int(i[9].split(':')[2]) <=28 :
+                pass
+            elif int(i[9].split(':')[2]) >= 115:
+                pass
+            else: f3.write(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+### ii. Filter GQ & PL <a name="GQ3"> </a>
+
+cat filter.GQ.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            if 'AD' in i[8]:
+                if int(i[9].split(':')[3]) <= 98:
+                    pass
+                else: f3.write(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+cat filter.PL.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()
+            if 'PGT' in i[8]:
+                l0 = i[9].split(':')[6].split(',')
+                if '.' in l0: pass
+                else: PL0 = sorted([int(x) for x in l0])
+
+                if int(PL0[1]) == 0 and  int(PL0[0]) == 0:
+                    if int(PL0[2]) - int(PL0[1]) < 200:
+                        pass
+                    else: f3.write(l)
+                elif int(PL0[1]) - int(PL0[0]) < 200:
+                    pass
+                else: f3.write(l)
+
+            else:
+                l1 = i[9].split(':')[4].split(',')
+                if '.' in l1: pass
+                else: PL1 = sorted([int(x) for x in l1])
+
+                if int(PL1[1]) == 0 and  int(PL1[0]) == 0:
+                    if int(PL1[2]) - int(PL1[1]) < 200:
+                        pass
+                    else: f3.write(l)
+                elif int(PL1[1]) - int(PL1[0]) < 200:
+                    pass
+                else: f3.write(l)
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+### iii. Filter AD <a name="AD3"> </a>
+
+cat filter.AD.py
+
+    import sys
+    import getopt
+    import os
+    def usage():
+        print('''Useage: python script.py [option] [parameter]
+        -s/input_file           input the lift file 
+        -t/temp                 blasr_result
+        -l/length                novel_seq
+        -o/--output              the output results file
+        -h/--help                show possible options''')
+    #######################default
+    opts, args = getopt.getopt(sys.argv[1:], "hs:t:o:l:",["help","sequence_file=","temp=","length","output="])  
+    for op, value in opts:
+        if op == "-s" or op=="--sequence_file":
+            sequence_file = value
+        elif op == "-o" or op =="--output": 
+            output = value
+        elif op == "-l" or op =="--length": 
+            length = value
+        elif op == "-t" or op =="--temp": 
+            temp = value
+        elif op == "-h" or op == "--help":
+            usage()
+            sys.exit(1)
+
+    def reduce(function, iterable, initializer=None):
+        it = iter(iterable)
+        if initializer is None:
+            try:
+                initializer = next(it)
+            except StopIteration:
+                raise TypeError('reduce() of empty sequence with no initial value')
+        accum_value = initializer
+        for x in it:
+            accum_value = function(accum_value, x)
+        return accum_value
+
+    f1=open(sequence_file)
+    #f2=open(temp)
+    #f4=open(length,'w')
+    f3=open(output,'w')
+    total={}
+    for l in f1.readlines():
+            i=l.strip().split()[9].split(':')[1].split(',')
+
+            if reduce(lambda x, y: x+y, i) != l.strip().split()[9].split(':')[2]:
+                pass
+
+            if 'AD' not in l.strip().split()[8]:
+                f3.write(l)
+            else:
+                if 'AD'  in l.strip().split()[8]:
+                # if content is 3 possible outcomes are
+                    if len(i) == 3:
+                        if int(i[0]) > 25 and int(i[1]) > 25 and int(i[2]) == 0 :
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[2]) > 25 and int(i[0]) == 0 :
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 :
+                            f3.write(l)
+                        else: pass
+                    elif len(i) == 2:
+                        if int(i[0]) > 25 and int(i[1]) > 25:
+                            f3.write(l)
+                        else: pass
+                    elif len(i) == 4:
+                        if int(i[0]) > 25 and int(i[1]) > 25 and int(i[2]) == 0 and int(i[3]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[2]) > 25 and int(i[3]) == 0 and int(i[0]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[3]) > 25 and int(i[0]) == 0 and int(i[1]) == 0:
+                            f3.write(l)
+                        elif  int(i[3]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 and int(i[2]) == 0:
+                            f3.write(l)
+                        elif  int(i[2]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 and int(i[3]) == 0:
+                            f3.write(l)
+                        elif  int(i[3]) > 25 and int(i[1]) > 25 and int(i[0]) == 0 and int(i[2]) == 0:
+                            f3.write(l)
+                        else: pass
+                    elif len(i) == 5:
+                        if int(i[0]) > 25 and int(i[1]) > 25 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[2]) > 25 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[0]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[3]) > 25 and int(i[4]) == 0 and int(i[0]) == 0 and int(i[1]) == 0:
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[4]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0:
+                            f3.write(l)
+                        elif int(i[4]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[3]) > 25 and int(i[2]) == 0 and int(i[4]) == 0 and int(i[0]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[4]) > 25 and int(i[3]) == 0 and int(i[2]) == 0 and int(i[0]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[4]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[3]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 and int(i[4]) == 0 and int(i[3]) == 0:
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[4]) == 0:
+                            f3.write(l)
+                    elif len(i) == 6:
+                        if int(i[0]) > 25 and int(i[1]) > 25 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[2]) > 25 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[0]) == 0 :
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[3]) > 25 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[0]) == 0 and int(i[1]) == 0 :
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[4]) > 25 and int(i[5]) == 0 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 :
+                            f3.write(l)
+                        elif int(i[4]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 :
+                            f3.write(l)
+                        elif int(i[5]) > 25 and int(i[0]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 :
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[2]) > 25 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[3]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[4]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[3]) > 25 and int(i[2]) == 0 and int(i[0]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[4]) > 25 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[0]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 :
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[4]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[5]) == 0 :
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 :
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[4]) == 0 :
+                            f3.write(l)
+                    elif len(i) == 7:
+                        if int(i[0]) > 25 and int(i[1]) > 25 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[2]) > 25 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[0]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[3]) > 25 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[4]) > 25 and int(i[5]) == 0 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[4]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[5]) > 25 and int(i[6]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[0]) == 0:
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[6]) > 25 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[2]) == 0:
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[5]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[4]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[3]) > 25 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[0]) > 25 and int(i[2]) > 25 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[3]) > 25 and int(i[0]) == 0 and int(i[2]) == 0 and int(i[4]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[4]) > 25 and int(i[0]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[1]) > 25 and int(i[6]) > 25 and int(i[0]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[4]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[5]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[2]) > 25 and int(i[6]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[3]) == 0 and int(i[4]) == 0 and int(i[5]) == 0:
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[5]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[4]) == 0 and int(i[6]) == 0:
+                            f3.write(l)
+                        elif int(i[3]) > 25 and int(i[6]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[4]) == 0 and int(i[5]) == 0:
+                            f3.write(l)
+                        elif int(i[4]) > 25 and int(i[6]) > 25 and int(i[0]) == 0 and int(i[1]) == 0 and int(i[2]) == 0 and int(i[3]) == 0 and int(i[5]) == 0:
+                            f3.write(l)
+                    else: print(l)
+
+
+    f1.close()
+    #f2.close()
+    f3.close()
+    #f4.close()
+
+
+----
+
+## 9. Calculating the LoH rate <a name="LoHrate"> </a>
+  
+The LoH rate can be calculated as: 
+
+sites with LoH / (2 x callable sites) = LoH rate 
